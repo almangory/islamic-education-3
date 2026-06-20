@@ -23,7 +23,8 @@ import {
   ChevronLeft, 
   ChevronRight,
   HelpCircle as HelpIcon,
-  BookOpenCheck
+  BookOpenCheck,
+  Printer
 } from 'lucide-react';
 
 import { Lesson, StudentProgress, Badge, QuizQuestion } from './types';
@@ -34,6 +35,7 @@ import IllustratedStory from './components/IllustratedStory';
 import QuizSystem, { grandFinalExam } from './components/QuizSystem';
 import FiqhPlayground from './components/FiqhPlayground';
 import ComicLibrary from './components/ComicLibrary';
+import WorksheetGenerator from './components/WorksheetGenerator';
 
 const DEFAULT_PROGRESS: StudentProgress = {
   stars: 0,
@@ -46,7 +48,8 @@ const DEFAULT_PROGRESS: StudentProgress = {
 
 export default function App() {
   const [progress, setProgress] = useState<StudentProgress>(DEFAULT_PROGRESS);
-  const [activeTab, setActiveTab] = useState<'books' | 'stories' | 'fiqh' | 'quizzes'>('books');
+  const [activeTab, setActiveTab] = useState<'books' | 'stories' | 'fiqh' | 'quizzes' | 'worksheets'>('books');
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [selectedUnitId, setSelectedUnitId] = useState<number | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string | 'all'>('all');
@@ -231,7 +234,27 @@ export default function App() {
     if (savedName) {
       setStudentName(savedName);
     }
+    const savedFavorites = localStorage.getItem('islamic_favorite_lessons_v1');
+    if (savedFavorites) {
+      try {
+        setFavorites(JSON.parse(savedFavorites));
+      } catch (e) {
+        console.error("Failed loading favorites", e);
+      }
+    }
   }, []);
+
+  const toggleFavorite = (lessonId: string) => {
+    let nextFavs = [...favorites];
+    if (nextFavs.includes(lessonId)) {
+      nextFavs = nextFavs.filter(id => id !== lessonId);
+    } else {
+      nextFavs.push(lessonId);
+    }
+    setFavorites(nextFavs);
+    localStorage.setItem('islamic_favorite_lessons_v1', JSON.stringify(nextFavs));
+    SoundEngine.playSparkle();
+  };
 
   // Sync mute-state with SoundEngine default sound configurations
   const handleToggleMute = () => {
@@ -547,6 +570,56 @@ export default function App() {
           </button>
         </div>
       </header>
+
+      {/* Horizontal Favorites List Bar - top of the website */}
+      {favorites.length > 0 && (
+        <div className="bg-[#FAF9F6]/85 border-b border-[#DCD3C1] py-2.5 px-4 sticky top-0 backdrop-blur-md z-20 shadow-xs no-print">
+          <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 overflow-x-auto scrollbar-none flex-1 py-0.5">
+              <span className="text-xs font-black text-[#D48166] flex items-center gap-1 shrink-0 bg-[#D48166]/10 py-1.5 px-3.5 rounded-full select-none" id="fav-bar-title">
+                <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500 animate-pulse" />
+                <span>الدروس المفضلة ⭐ :</span>
+              </span>
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none" id="fav-lessons-horizontal-list">
+                {favorites.map(favId => {
+                  const lesson = lessonsData.find(l => l.id === favId);
+                  if (!lesson) return null;
+                  return (
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.98 }}
+                      key={favId}
+                      onClick={() => {
+                        // Exit any active sub-sessions to open favorit lesson
+                        setActiveQuiz(null);
+                        setActiveGrandFinal(false);
+                        setStartedConfiguredQuiz(false);
+                        setActiveLesson(lesson);
+                        SoundEngine.playSparkle();
+                      }}
+                      className="bg-white hover:bg-[#F1EBDC] border border-[#DCD3C1] text-[#4A453E] text-xs font-bold py-1.5 px-3.5 rounded-full flex items-center gap-1.5 transition whitespace-nowrap cursor-pointer shadow-2xs shrink-0"
+                    >
+                      <span className="text-xs">{lesson.icon}</span>
+                      <span>{lesson.title.split(":")[0]}</span>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </div>
+            
+            <button
+              onClick={() => {
+                setFavorites([]);
+                localStorage.setItem('islamic_favorite_lessons_v1', JSON.stringify([]));
+                SoundEngine.playSparkle();
+              }}
+              className="text-[11px] text-rose-600 hover:text-rose-700 font-extrabold shrink-0 border border-rose-200/50 hover:bg-rose-50/55 py-1 px-3 rounded-full transition cursor-pointer"
+            >
+              مسح المفضلة 🗑️
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Hub workspace tabs */}
       <main className="max-w-6xl mx-auto px-4 mt-8 relative z-10">
@@ -905,6 +978,19 @@ export default function App() {
                 <ListChecks className="w-5 h-5 shrink-0" />
                 <span>ممر الاختبارات الشاملة والنهائية</span>
               </button>
+
+              <button
+                onClick={() => { setActiveTab('worksheets'); SoundEngine.playSparkle(); }}
+                className={`py-3 px-4 font-bold text-sm border-b-2 transition-all flex items-center gap-2 whitespace-nowrap focus:outline-none cursor-pointer ${
+                  activeTab === 'worksheets'
+                    ? 'border-[#B08933] text-[#B08933] font-black'
+                    : 'border-transparent text-[#8E8268] hover:text-[#3A452E]'
+                }`}
+                id="tab-btn-worksheets"
+              >
+                <Printer className="w-5 h-5 shrink-0 text-[#B08933]" />
+                <span className="text-[#B08933]">توليد أوراق عمل للطباعة (A4) 🖨️</span>
+              </button>
             </div>
 
             {/* TAB CONTENTS */}
@@ -1035,9 +1121,27 @@ export default function App() {
                         <div>
                           {/* Card top badge */}
                           <div className="flex justify-between items-center mb-3">
-                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md ${indicatorBg}`}>
-                              {indicatorText}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md ${indicatorBg}`}>
+                                {indicatorText}
+                              </span>
+                              
+                              {/* Favorite Heart Selector */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleFavorite(less.id);
+                                }}
+                                className={`p-1 rounded-full transition-all cursor-pointer ${
+                                  favorites.includes(less.id)
+                                    ? 'bg-rose-50 text-rose-500 hover:scale-110'
+                                    : 'bg-neutral-100 hover:bg-rose-50 text-neutral-400 hover:text-rose-500'
+                                }`}
+                                title={favorites.includes(less.id) ? "إزالة من المفضلة" : "إضافة للمفضلة"}
+                              >
+                                <Heart className={`w-3.5 h-3.5 ${favorites.includes(less.id) ? 'fill-rose-500 text-rose-500' : ''}`} />
+                              </button>
+                            </div>
                             {renderTypeIcon(less.type)}
                           </div>
 
@@ -1178,6 +1282,17 @@ export default function App() {
                 </div>
 
               </div>
+            )}
+
+            {/* TAB: Worksheet Generator */}
+            {activeTab === 'worksheets' && (
+              <WorksheetGenerator
+                studentName={studentName}
+                onBack={() => {
+                  setActiveTab('books');
+                  SoundEngine.playSparkle();
+                }}
+              />
             )}
           </>
         )}
