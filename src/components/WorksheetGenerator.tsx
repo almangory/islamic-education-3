@@ -309,7 +309,7 @@ export default function WorksheetGenerator({ onBack, studentName = 'مكتشف �
   const pagesArray = Array.from({ length: pageCount }, (_, idx) => idx);
 
   return (
-    <div className="bg-white min-h-screen text-[#4A453E] text-right font-sans rounded-3xl overflow-hidden shadow-xs border border-[#DCD3C1]/50 no-print">
+    <div className="bg-white min-h-screen text-[#4A453E] text-right font-sans rounded-3xl overflow-hidden shadow-xs border border-[#DCD3C1]/50 print-wrapper">
       
       {/* Control panel & options header - hidden on print */}
       <div className="bg-[#F1EBDC] border-b border-[#DCD3C1] p-6 no-print">
@@ -537,8 +537,8 @@ export default function WorksheetGenerator({ onBack, studentName = 'مكتشف �
       </div>
 
       {/* Pages Container Screen Preview - visually styled pages */}
-      <div className="bg-neutral-100 p-8 flex flex-col items-center gap-10 overflow-x-auto select-none no-print">
-        <p className="text-xs font-black text-[#8E8268] flex items-center gap-1">
+      <div className="bg-neutral-100 p-8 flex flex-col items-center gap-10 overflow-x-auto select-none print-container">
+        <p className="text-xs font-black text-[#8E8268] flex items-center gap-1 no-print">
           <span>👀 معاينة مباشرة للأوراق قبل سحبها بالمطبعة (بحجم A4 حقيقي):</span>
         </p>
         
@@ -547,7 +547,7 @@ export default function WorksheetGenerator({ onBack, studentName = 'مكتشف �
           return (
             <div
               key={pIndex}
-              className="relative w-[210mm] min-h-[297mm] bg-white p-[18mm] border border-neutral-300 shadow-xl rounded-sm text-black shrink-0 relative flex flex-col justify-between overflow-hidden"
+              className="print-page relative w-[210mm] min-h-[297mm] bg-white p-[18mm] border border-neutral-300 shadow-xl rounded-sm text-black shrink-0 flex flex-col justify-between overflow-hidden"
               style={{ direction: 'rtl', fontFamily: 'serif' }}
             >
               
@@ -934,12 +934,45 @@ export default function WorksheetGenerator({ onBack, studentName = 'مكتشف �
           header,
           footer,
           .no-print,
-          .bg-neutral-100,
           button,
           select,
           input,
           label {
             display: none !important;
+          }
+
+          /* Reset all outer layouts & dimensions so they don't offset A4 on print */
+          #root, 
+          main, 
+          .min-h-screen {
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: none !important;
+            width: 100% !important;
+            box-shadow: none !important;
+            border: none !important;
+            overflow: visible !important;
+            min-height: auto !important;
+          }
+
+          .print-wrapper {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
+            min-height: auto !important;
+          }
+
+          .print-container {
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            gap: 0 !important;
+            display: block !important;
+            overflow: visible !important;
           }
 
           .print-page {
@@ -957,7 +990,8 @@ export default function WorksheetGenerator({ onBack, studentName = 'مكتشف �
             background: white !important;
             color: black !important;
             display: flex !important;
-            flex-col: justify !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
             z-index: 10 !important;
           }
 
