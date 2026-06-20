@@ -1288,6 +1288,7 @@ export default function App() {
             {activeTab === 'worksheets' && (
               <WorksheetGenerator
                 studentName={studentName}
+                favorites={favorites}
                 onBack={() => {
                   setActiveTab('books');
                   SoundEngine.playSparkle();
